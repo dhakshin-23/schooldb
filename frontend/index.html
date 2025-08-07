@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>School Management</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 2rem; }
+    input, button { margin: 0.5rem 0; padding: 0.5rem; width: 300px; }
+    table { margin-top: 2rem; width: 100%; border-collapse: collapse; }
+    th, td { padding: 0.75rem; border: 1px solid #ccc; text-align: left; }
+  </style>
+</head>
+<body>
+
+  <h2>Add a New School</h2>
+  <form id="schoolForm">
+    <input type="text" id="name" placeholder="School Name" required><br>
+    <input type="text" id="address" placeholder="Address" required><br>
+    <input type="number" step="any" id="latitude" placeholder="Latitude" required><br>
+    <input type="number" step="any" id="longitude" placeholder="Longitude" required><br>
+    <button type="submit">Add School</button>
+  </form>
+  <p id="addMessage"></p>
+
+  <hr>
+
+  <h2>Find Nearby Schools</h2>
+  <form id="locationForm">
+    <input type="number" step="any" id="userLat" placeholder="Your Latitude" required><br>
+    <input type="number" step="any" id="userLng" placeholder="Your Longitude" required><br>
+    <button type="submit">Find Schools</button>
+  </form>
+
+  <div id="schoolResults" style="display: none;">
+    <h3>Schools Near You:</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Name</th>
+          <th>Address</th>
+          <th>Distance (km)</th>
+        </tr>
+      </thead>
+      <tbody id="schoolList"></tbody>
+    </table>
+  </div>
+
+  <script>
+    const apiBase = 'http://localhost:3000';
+
+    // Add School
+    document.getElementById('schoolForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const address = document.getElementById('address').value;
+      const latitude = parseFloat(document.getElementById('latitude').value);
+      const longitude = parseFloat(document.getElementById('longitude').value);
+
+      const res = await fetch(`${apiBase}/addSchool`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, address, latitude, longitude })
+      });
+
+      const result = await res.json();
+      const msg = document.getElementById('addMessage');
+      msg.textContent = res.ok ? 'School added successfully!' : 'Error: ' + result.message;
+      if (res.ok) document.getElementById('schoolForm').reset();
+    });
+
+    // List Schools
+    document.getElementById('locationForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const lat = document.getElementById('userLat').value;
+      const lng = document.getElementById('userLng').value;
+
+      const res = await fetch(`${apiBase}/listSchools?latitude=${lat}&longitude=${lng}`);
+      const schools = await res.json();
+
+      const list = document.getElementById('schoolList');
+      list.innerHTML = '';
+      document.getElementById('schoolResults').style.display = 'block';
+
+      schools.forEach(school => {
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td>${school.name}</td>
+          <td>${school.address}</td>
+          <td>${school.distance.toFixed(2)}</td>
+        `;
+        list.appendChild(row);
+      });
+    });
+  </script>
+</body>
+</html>
